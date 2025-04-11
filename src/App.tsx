@@ -1,12 +1,6 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import AppNavigator from './navigation/AppNavigator';
 
-const ComponentName = () => {
-  return (
-    <View>
-      <Text>ComponentName</Text>
-    </View>
-  );
-};
-
-export default ComponentName;
+export default function App() {
+  return <AppNavigator />;
+}
