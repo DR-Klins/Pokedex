@@ -9,6 +9,7 @@ export const fetchPokemonList = async (offset = 0, limit = 20) => {
 };
 
 export const fetchPokemonDetails = async (url: string) => {
-  const response = await axios.get(url);
-  return response.data;
-};
+    const response = await axios.get(url);
+    return response.data;
+  };
+  

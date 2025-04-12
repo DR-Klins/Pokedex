@@ -5,22 +5,23 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import styles from './styles';
 import { FlashList } from '@shopify/flash-list';
-import { fetchPokemonList, fetchPokemonDetails } from '../../api/pokeapi';
-import { Pokemon } from '../../types';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
-import { useNavigation } from '@react-navigation/native';
+import { Pokemon } from '../../types';
 
 export default function HomeScreen() {
   const [pokemon, setPokemon] = useState<Pokemon[]>([]);
-  const [filtered, setFiltered] = useState<Pokemon[]>([]);
-  const [loading, setLoading] = useState(true); // Initial loading state
-  const [offset, setOffset] = useState(0); // Track current offset for pagination
-  const [isFetchingMore, setIsFetchingMore] = useState(false); // Prevent fetching when already in progress
-  const [hasMore, setHasMore] = useState(true); // Flag to check if there are more items to fetch
+  const [searchText, setSearchText] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [currentId, setCurrentId] = useState(1);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -29,46 +30,105 @@ export default function HomeScreen() {
     loadPokemon();
   }, []);
 
+  /**
+   * Loads a batch of Pokémon from the API.
+   * Uses currentId to paginate.
+   */
   const loadPokemon = async () => {
-    if (isFetchingMore || !hasMore) return; // Prevent loading if already fetching or no more data
+    // Prevent duplicate fetches or fetching when no more data
+    if (isFetchingMore || !hasMore) return;
 
-    setIsFetchingMore(true); // Set fetching state to true
-    const limit = 20; // Number of items per request
-    const data = await fetchPokemonList(offset, limit); // Fetch data
+    setIsFetchingMore(true);
+    const limit = 40;
 
-    if (data.results.length === 0) {
-      setHasMore(false); // No more data to fetch
+    try {
+      const listRes = await fetch(
+        `https://pokeapi.co/api/v2/pokemon?offset=${currentId - 1}&limit=${limit}`
+      );
+
+      if (!listRes.ok) {
+        throw new Error(`API response not OK: ${listRes.status}`);
+      }
+
+      const listData = await listRes.json();
+
+      // Fetch details for each Pokémon in parallel
+      const detailResponses = await Promise.all(
+        listData.results.map((pokemon: { url: string }) => fetch(pokemon.url))
+      );
+
+      const detailData = await Promise.all(
+        detailResponses.map((res) => {
+          if (!res.ok) {
+            throw new Error(`Detail fetch failed: ${res.status}`);
+          }
+          return res.json();
+        })
+      );
+
+      const newPokemonList: Pokemon[] = detailData.map((data) => {
+        const image =
+          data.sprites?.other?.['official-artwork']?.front_default ||
+          data.sprites?.front_default;
+
+        return {
+          id: data.id,
+          name: data.name,
+          image,
+        };
+      });
+
+      // Stop pagination if no new data is returned
+      if (newPokemonList.length === 0) setHasMore(false);
+
+      setPokemon((prev) => [...prev, ...newPokemonList]);
+      setCurrentId((prev) => prev + limit);
+    } catch (err) {
+      console.warn('Error loading Pokémon:', err);
+      setHasMore(false); // Prevent further attempts if something broke
+    } finally {
+      setLoading(false);
+      setIsFetchingMore(false);
     }
-
-    setPokemon(prev => [...prev, ...data.results]); // Append new data to existing list
-    setFiltered(prev => [...prev, ...data.results]); // Update filtered list
-    setOffset(prev => prev + limit); // Update offset for next batch
-    setLoading(false); // Set loading state to false after initial load
-    setIsFetchingMore(false); // Reset fetching state
   };
 
-  const handleSearch = (text: string) => {
-    // Filter Pokémon based on search query
-    const filteredData = pokemon.filter(p =>
-      p.name.toLowerCase().includes(text.toLowerCase())
-    );
-    setFiltered(filteredData);
-  };
-
+  /**
+   * Fetches full Pokémon details and navigates to the Details screen.
+   */
   const handlePress = async (poke: Pokemon) => {
-    // Fetch detailed info for the selected Pokémon
-    const details = await fetchPokemonDetails(poke.url);
-    navigation.navigate('Details', { pokemon: details });
+    try {
+      const response = await fetch(
+        `https://pokeapi.co/api/v2/pokemon/${poke.id}/`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch details for Pokémon ID ${poke.id}`);
+      }
+
+      const details = await response.json();
+      navigation.navigate('Details', { pokemon: details });
+    } catch (err) {
+      console.error(' Failed to fetch Pokémon details:', err);
+    }
   };
 
+  /**
+   * Loads more Pokémon when the list is scrolled near the bottom.
+   */
   const handleEndReached = useCallback(() => {
-    if (!isFetchingMore && hasMore) { // Load more data if not already fetching
-      setIsFetchingMore(true);
-      loadPokemon(); // Fetch additional Pokémon data
+    if (!isFetchingMore && hasMore) {
+      loadPokemon();
     }
   }, [isFetchingMore, hasMore]);
 
-  // Show loading indicator during the initial load
+  // Filter Pokémon based on the search input
+  const filteredData = searchText
+    ? pokemon.filter((p) =>
+        p.name.toLowerCase().includes(searchText.toLowerCase())
+      )
+    : pokemon;
+
+  // Show loader when app is initially loading
   if (loading && pokemon.length === 0) {
     return <ActivityIndicator style={{ flex: 1 }} size="large" color="#000" />;
   }
@@ -78,20 +138,49 @@ export default function HomeScreen() {
       <TextInput
         style={styles.searchBar}
         placeholder="Search Pokémon"
-        onChangeText={handleSearch}
+        onChangeText={setSearchText}
+        value={searchText}
       />
+
       <FlashList
-        data={filtered}
-        estimatedItemSize={80}
-        keyExtractor={item => item.name}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} onPress={() => handlePress(item)}>
-            <Text style={styles.name}>{item.name}</Text>
-          </TouchableOpacity>
-        )}
-        onEndReached={handleEndReached} // Trigger when near the bottom
-        onEndReachedThreshold={0.5} // Threshold for triggering load more
-        ListFooterComponent={isFetchingMore ? <ActivityIndicator size="small" /> : null} // Show loading spinner when fetching more data
+        data={filteredData}
+        estimatedItemSize={120}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => {
+          const imageOpacity = new Animated.Value(0); // Controls image fade-in
+
+          const onLoad = () => {
+            Animated.timing(imageOpacity, {
+              toValue: 1,
+              duration: 400,
+              useNativeDriver: true,
+            }).start();
+          };
+
+          return (
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => handlePress(item)}
+            >
+              {item.image && (
+                <Animated.View style={{ opacity: imageOpacity }}>
+                  <FastImage
+                    source={{ uri: item.image }}
+                    style={{ width: 100, height: 100, marginBottom: 8 }}
+                    resizeMode={FastImage.resizeMode.contain}
+                    onLoad={onLoad}
+                  />
+                </Animated.View>
+              )}
+              <Text style={styles.name}>{item.name}</Text>
+            </TouchableOpacity>
+          );
+        }}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          isFetchingMore ? <ActivityIndicator size="small" /> : null
+        }
       />
     </View>
   );
