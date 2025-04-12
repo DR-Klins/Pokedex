@@ -86,6 +86,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#fff',
   },
+
   // Pokedex Lines
   line1: {
     position: 'absolute',
@@ -125,7 +126,7 @@ const styles = StyleSheet.create({
   // Search bar positioning
   searchBarContainer: {
     position: 'absolute',
-    top: '12.7%',
+    top: '13.1%',
     right: 10.5,
     width: '65%',
     zIndex: 2,
@@ -139,7 +140,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     backgroundColor: '#A7D8F2',
     fontSize: 12,
-    fontFamily: 'monospace',
+    fontFamily: 'Roboto',
     letterSpacing: 1,
     shadowOffset: { width: 1, height: 1 },
     shadowOpacity: 0.2,
@@ -149,11 +150,11 @@ const styles = StyleSheet.create({
   // Pokémon card
   card: {
     backgroundColor: '#dbe4c6',
-    borderWidth: 3,
+    borderWidth: 0,
     borderColor: '#000000',
     borderRadius: 12,
     padding: 10,           
-    marginBottom: 12,     
+    marginBottom: 15,     
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',   
@@ -165,24 +166,25 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   pokemonImage: {
-    width: 50,
-    height: 60,
-    marginRight: 10,
+    width: 70,
+    height: 70,
+    marginRight: 150,
   },       
   name: {
-    fontSize: 14,
-    fontFamily: 'monospace',
+    fontSize: 18,
+    fontFamily: 'Roboto',
     textTransform: 'uppercase',
     color: '#111',
-    letterSpacing: 1.5,
-    textAlign: 'right',    
-    flex: 1,                
+    fontWeight: 'bold',
+    textAlign: 'center',    
+    flex: 1,  
+    marginBottom: 5,              
   },
   // Poké Ball
   pokeballContainer: {
     position: 'absolute',
     top: '40%',  
-    left: '25%',
+    right: '61%',
     width: '50%',
     height: '50%',
     justifyContent: 'center',
@@ -190,8 +192,9 @@ const styles = StyleSheet.create({
   },
 
   pokeballImage: {
-    width: 60,  
-    height: 60, 
+    width: 65,  
+    height: 65, 
+    transform: [{ rotate: '20deg' }],
   },
   //Green Button
   greenButton: {
@@ -203,13 +206,33 @@ const styles = StyleSheet.create({
     width:"35%",
     height: "5%",
     borderRadius: 5,
-
   },
   greenButtonText: {
-    color: 'white',
+    color: 'yellow',
     fontSize: 16,
     fontWeight: 'bold',
   },
+  typesContainer: {
+    flexDirection: 'row', // Arrange types horizontally
+    flexWrap: 'wrap', // Allow wrapping of types if there are multiple
+    justifyContent: 'center', // Center types horizontally
+    marginTop: 5,
+    alignItems:'center',
+  },
+  typeText: {
+    backgroundColor: 'black', // Example background color for type
+    color: 'white',
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    margin: 2,
+    borderRadius: 4,
+    fontSize: 12,
+
+  },
+  columnContainer:{
+    flexDirection: 'column', // Stack name and types vertically
+    alignItems: 'flex-end', // Center name and types horizontally
+  }
 });
 
 export default styles;
