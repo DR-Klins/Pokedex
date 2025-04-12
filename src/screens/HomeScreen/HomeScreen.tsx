@@ -6,70 +6,55 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Animated,
+  StatusBar,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import styles from './styles';
 import { FlashList } from '@shopify/flash-list';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { Pokemon } from '../../types';
+import { fetchPokemonList, fetchPokemonDetails } from '../../api/pokeapi';
+import styles from './styles';
 
 export default function HomeScreen() {
+  // State variables to store Pokemon data, search input, loading state, etc.
   const [pokemon, setPokemon] = useState<Pokemon[]>([]);
-  const [searchText, setSearchText] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [currentId, setCurrentId] = useState(1);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [searchText, setSearchText] = useState(''); // Search bar input state
+  const [loading, setLoading] = useState(true); // Loading state for initial data fetch
+  const [currentId, setCurrentId] = useState(1); // Track the ID to paginate through the API
+  const [isFetchingMore, setIsFetchingMore] = useState(false); // State to handle pagination fetches
+  const [hasMore, setHasMore] = useState(true); // State to track if more Pokémon can be loaded
 
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>(); // Hook for navigation to other screens
 
-  // Fetch initial Pokémon data on component mount
+  // Effect hook to load Pokémon data on initial render
   useEffect(() => {
     loadPokemon();
-  }, []);
+  }, []); // Empty dependency array means this runs only once, when the component mounts
 
-  /**
-   * Loads a batch of Pokémon from the API.
-   * Uses currentId to paginate.
-   */
+  // Function to fetch Pokémon data from the API
   const loadPokemon = async () => {
-    // Prevent duplicate fetches or fetching when no more data
-    if (isFetchingMore || !hasMore) return;
+    if (isFetchingMore || !hasMore) return; // Prevent multiple concurrent fetches
 
     setIsFetchingMore(true);
-    const limit = 40;
+    const limit = 40; // Number of Pokémon to load in each batch
 
     try {
-      const listRes = await fetch(
-        `https://pokeapi.co/api/v2/pokemon?offset=${currentId - 1}&limit=${limit}`
-      );
+      // Fetch the list of Pokémon (names/URLs) for the current batch
+      const data = await fetchPokemonList(currentId - 1, limit);
 
-      if (!listRes.ok) {
-        throw new Error(`API response not OK: ${listRes.status}`);
-      }
-
-      const listData = await listRes.json();
-
-      // Fetch details for each Pokémon in parallel
+      // Fetch detailed information (sprites, etc.) for each Pokémon in the list
       const detailResponses = await Promise.all(
-        listData.results.map((pokemon: { url: string }) => fetch(pokemon.url))
+        data.results.map((poke: { url: string }) => fetchPokemonDetails(poke.url))
       );
 
-      const detailData = await Promise.all(
-        detailResponses.map((res) => {
-          if (!res.ok) {
-            throw new Error(`Detail fetch failed: ${res.status}`);
-          }
-          return res.json();
-        })
-      );
-
-      const newPokemonList: Pokemon[] = detailData.map((data) => {
+      // Map the API responses to an array of Pokémon objects
+      const newPokemonList: Pokemon[] = detailResponses.map((data) => {
         const image =
           data.sprites?.other?.['official-artwork']?.front_default ||
-          data.sprites?.front_default;
+          data.sprites?.front_default; // Select the best available image URL
 
         return {
           id: data.id,
@@ -78,110 +63,150 @@ export default function HomeScreen() {
         };
       });
 
-      // Stop pagination if no new data is returned
+      // If no new Pokémon are returned, set the 'hasMore' flag to false
       if (newPokemonList.length === 0) setHasMore(false);
 
+      // Update the state with the newly fetched Pokémon
       setPokemon((prev) => [...prev, ...newPokemonList]);
-      setCurrentId((prev) => prev + limit);
-    } catch (err) {
-      console.warn('Error loading Pokémon:', err);
-      setHasMore(false); // Prevent further attempts if something broke
-    } finally {
+      setCurrentId((prev) => prev + limit); // Increment the current ID for the next fetch
       setLoading(false);
-      setIsFetchingMore(false);
-    }
-  };
-
-  /**
-   * Fetches full Pokémon details and navigates to the Details screen.
-   */
-  const handlePress = async (poke: Pokemon) => {
-    try {
-      const response = await fetch(
-        `https://pokeapi.co/api/v2/pokemon/${poke.id}/`
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch details for Pokémon ID ${poke.id}`);
-      }
-
-      const details = await response.json();
-      navigation.navigate('Details', { pokemon: details });
     } catch (err) {
-      console.error(' Failed to fetch Pokémon details:', err);
+      // Handle error if the fetch fails
+      console.warn('Error loading Pokémon:', err);
+      setHasMore(false); // No more Pokémon to fetch in case of error
+    } finally {
+      setIsFetchingMore(false); // Reset the fetching state regardless of success or failure
     }
   };
 
-  /**
-   * Loads more Pokémon when the list is scrolled near the bottom.
-   */
+  // Callback function to handle when the end of the list is reached
   const handleEndReached = useCallback(() => {
     if (!isFetchingMore && hasMore) {
-      loadPokemon();
+      loadPokemon(); // Load more Pokémon if possible
     }
   }, [isFetchingMore, hasMore]);
 
-  // Filter Pokémon based on the search input
+  // Filter the Pokémon list based on the search text
   const filteredData = searchText
     ? pokemon.filter((p) =>
         p.name.toLowerCase().includes(searchText.toLowerCase())
       )
     : pokemon;
 
-  // Show loader when app is initially loading
+  // Display loading indicator if data is still being fetched
   if (loading && pokemon.length === 0) {
     return <ActivityIndicator style={{ flex: 1 }} size="large" color="#000" />;
   }
 
+  // Components for drawing the black lines (styling purposes)
+  const BlackLine1 = () => {
+    return <View style={styles.line1} />;
+  };
+  const BlackLine2 = () => {
+    return <View style={styles.line2} />;
+  };
+  const BlackLine3 = () => {
+    return <View style={styles.line3} />;
+  };
+  const BlackLine4 = () => {
+    return <View style={styles.line4} />;
+  };
+
+  // Function to handle green button press
+  const handleGreenButtonPress = () => {
+    console.log('Green button pressed');
+  };
+
   return (
-    <View style={{ flex: 1, padding: 10 }}>
-      <TextInput
-        style={styles.searchBar}
-        placeholder="Search Pokémon"
-        onChangeText={setSearchText}
-        value={searchText}
-      />
+    <View style={styles.container}>
+      <StatusBar backgroundColor="black" barStyle="light-content" />
 
-      <FlashList
-        data={filteredData}
-        estimatedItemSize={120}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => {
-          const imageOpacity = new Animated.Value(0); // Controls image fade-in
+      {/* Retro Pokédex Top */}
+      <View style={styles.pokedexTop}>
+        <View style={styles.lensOuter}>
+          <View style={styles.lensInner} />
+        </View>
+        <View style={styles.indicatorRow}>
+          <View style={styles.indicatorLightGreen} />
+          <View style={styles.indicatorLightRed} />
+          <View style={styles.indicatorLightYellow} />
+        </View>
+      </View>
+      <BlackLine1 />
+      <BlackLine2 />
+      <BlackLine3 />
 
-          const onLoad = () => {
-            Animated.timing(imageOpacity, {
-              toValue: 1,
-              duration: 400,
-              useNativeDriver: true,
-            }).start();
-          };
+      {/* Search Bar */}
+      <View style={styles.searchBarContainer}>
+        <TextInput
+          style={styles.searchBar}
+          placeholder="Search Pokémon"
+          onChangeText={setSearchText}
+          value={searchText}
+        />
+      </View>
 
-          return (
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => handlePress(item)}
-            >
-              {item.image && (
-                <Animated.View style={{ opacity: imageOpacity }}>
-                  <FastImage
-                    source={{ uri: item.image }}
-                    style={{ width: 100, height: 100, marginBottom: 8 }}
-                    resizeMode={FastImage.resizeMode.contain}
-                    onLoad={onLoad}
-                  />
-                </Animated.View>
-              )}
-              <Text style={styles.name}>{item.name}</Text>
-            </TouchableOpacity>
-          );
-        }}
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={
-          isFetchingMore ? <ActivityIndicator size="small" /> : null
-        }
-      />
+      {/* Content Area */}
+      <View style={styles.contentWrapper}>
+        <View style={styles.sideBorder} />
+        <View style={styles.content}>
+          <FlashList
+            data={filteredData} // Render the filtered Pokémon data
+            estimatedItemSize={120} // Optimize rendering for long lists
+            keyExtractor={(item) => item.id.toString()} // Use Pokémon ID as key
+            renderItem={({ item }) => {
+              const imageOpacity = new Animated.Value(0); // Animation value for image opacity
+
+              const onLoad = () => {
+                Animated.timing(imageOpacity, {
+                  toValue: 1, // Fade the image in when it's loaded
+                  duration: 400,
+                  useNativeDriver: true,
+                }).start();
+              };
+
+              return (
+                <TouchableOpacity style={styles.card}>
+                  <View style={styles.pokeballContainer}>
+                    <FastImage
+                      source={require('../../assets/pokeball.png')}  // Local image of a Poké Ball
+                      style={styles.pokeballImage}
+                    />
+                  </View>
+                  {item.image && (
+                    <Animated.View style={{ opacity: imageOpacity }}>
+                      <FastImage
+                        source={{ uri: item.image }}
+                        style={styles.pokemonImage}
+                        resizeMode={FastImage.resizeMode.contain}
+                        onLoad={onLoad} // Trigger animation on load
+                      />
+                    </Animated.View>
+                  )}
+                  <Text style={styles.name}>{item.name}</Text>
+                </TouchableOpacity>
+              );
+            }}
+            onEndReached={handleEndReached} // Trigger loading of more Pokémon when scrolled to the bottom
+            onEndReachedThreshold={0.5} // Trigger when 50% of the list is visible
+            ListFooterComponent={
+              isFetchingMore ? <ActivityIndicator size="small" /> : null // Show loading spinner when fetching more
+            }
+          />
+        </View>
+        <View style={styles.sideBorder} />
+      </View>
+      <BlackLine4 />
+
+      {/* Bottom Red Footer */}
+      <View style={styles.footer} />
+      {/* Green Button */}
+      <TouchableOpacity
+        style={styles.greenButton}
+        onPress={handleGreenButtonPress}
+      >
+        <Text style={styles.greenButtonText}>| | |</Text>
+      </TouchableOpacity>
     </View>
   );
 }
