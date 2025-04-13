@@ -1,6 +1,12 @@
+export interface Stat {
+  name: string;
+  base_stat: number;
+}
+
 export interface Pokemon {
   id: number;
   name: string;
   image: string;
-  types: string[]; // Array of strings representing the types
+  types: string[];
+  stats: Stat[];
 }

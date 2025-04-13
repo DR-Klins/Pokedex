@@ -1,34 +1,42 @@
 import { StyleSheet } from 'react-native';
 
 const styles = StyleSheet.create({
-  // Main layout
+  // Container for the entire layout
   container: {
     flex: 1,
     backgroundColor: '#d32f2f',
   },
+
+  // Footer section
   footer: {
     height: '12%',
     backgroundColor: '#d32f2f',
   },
+
+  // Wrapper for content layout
   contentWrapper: {
     flex: 1,
     flexDirection: 'row',
     backgroundColor: '#d32f2f',
   },
+
+  // Side border for separation
   sideBorder: {
     width: 10,
     backgroundColor: '#d32f2f',
   },
+
+  // Main content area with background and padding
   content: {
     flex: 1,
     backgroundColor: '#A7D8F2',
     padding: 10,
     marginHorizontal: 0.1, 
     borderRadius: 8,    
-    borderTopEndRadius:0,
+    borderTopEndRadius: 0,
   },
 
-  // Retro Pokédex top section  
+  // Top section of the retro Pokédex
   pokedexTop: {
     height: '17%',
     backgroundColor: '#d32f2f',
@@ -38,8 +46,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: "100%",  
   },
-  
-  // Lens top section
+
+  // Outer lens container in the Pokédex
   lensOuter: {
     width: 90,
     height: 90,
@@ -50,6 +58,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
+  // Inner lens in the Pokédex
   lensInner: {
     width: 50,
     height: 50,
@@ -57,11 +67,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#bbdefb',
   },
 
-  // Indicators Light top
+  // Row for the indicator lights at the top
   indicatorRow: {
     flexDirection: 'row',
     gap: 8,
   },
+
+  // Green indicator light
   indicatorLightGreen: {
     width: 10,
     height: 10,
@@ -70,6 +82,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#fff',
   },
+
+  // Red indicator light
   indicatorLightRed: {
     width: 10,
     height: 10,
@@ -78,6 +92,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#fff',
   },
+
+  // Yellow indicator light
   indicatorLightYellow: {
     width: 10,
     height: 10,
@@ -87,43 +103,49 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
   },
 
-  // Pokedex Lines
+  // Horizontal line 1 for the Pokédex
   line1: {
     position: 'absolute',
     top: '15.5%',    
-    height: 2,       
-    backgroundColor: 'black',
+    height: 5,       
+    backgroundColor: '#8B0000',
     width: '30%',   
     zIndex: 2,
   },
+
+  // Vertical line 2 for the Pokédex
   line2: {
     position: 'absolute',
     top: '11.7%',   
     left: '30%',     
-    height: '4%',   
-    width: 2,        
-    backgroundColor: 'black',
+    height: '4.4%',   
+    width: 5,        
+    backgroundColor: '#8B0000',
     zIndex: 2,
   },
+
+  // Horizontal line 3 for the Pokédex
   line3: {
     position: 'absolute',
     top: '11.5%',    
     left: "30%",
-    height: 2,       
-    backgroundColor: 'black',
+    height: 5,       
+    backgroundColor: '#8B0000',
     width: '100%',   
     zIndex: 2,
   },
+
+  // Bottom horizontal line 4 for the Pokédex
   line4: {
     position: 'absolute',
     bottom: '15.5%',    
-    height: 2,       
-    backgroundColor: 'black',
+    height: 5,       
+    backgroundColor: '#8B0000',
     width: '100%',    
     zIndex: 2,
   },
 
-  // Search bar positioning
+  // Search bar container with positioning
   searchBarContainer: {
     position: 'absolute',
     top: '13.1%',
@@ -131,12 +153,14 @@ const styles = StyleSheet.create({
     width: '65%',
     zIndex: 2,
   },
+
+  // Style for the search bar itself
   searchBar: {
     height: 36,
     borderRadius: 8,
     marginBottom: 10, 
-    borderBottomLeftRadius:0,
-    borderBottomRightRadius:0,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     paddingHorizontal: 12,
     backgroundColor: '#A7D8F2',
     fontSize: 12,
@@ -147,7 +171,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
 
-  // Pokémon card
+  // Card for displaying Pokémon info
   card: {
     backgroundColor: '#dbe4c6',
     borderWidth: 0,
@@ -165,11 +189,15 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
   },
+
+  // Image of the Pokémon
   pokemonImage: {
     width: 70,
     height: 70,
     marginRight: 150,
   },       
+
+  // Name of the Pokémon in the card
   name: {
     fontSize: 18,
     fontFamily: 'Roboto',
@@ -180,7 +208,8 @@ const styles = StyleSheet.create({
     flex: 1,  
     marginBottom: 5,              
   },
-  // Poké Ball
+
+  // Positioning for the Poké Ball image
   pokeballContainer: {
     position: 'absolute',
     top: '40%',  
@@ -191,47 +220,56 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  // Style for the Poké Ball image
   pokeballImage: {
     width: 65,  
     height: 65, 
     transform: [{ rotate: '20deg' }],
   },
-  //Green Button
+
+  // Green button style for actions
   greenButton: {
     backgroundColor: '#00C000',
     bottom: "5%",
     left: "60%",
     alignItems: 'center',
     justifyContent: 'center',
-    width:"35%",
+    width: "35%",
     height: "5%",
     borderRadius: 5,
   },
+
+  // Text style for the green button
   greenButtonText: {
     color: 'yellow',
     fontSize: 16,
     fontWeight: 'bold',
   },
+
+  // Container for the types of the Pokémon
   typesContainer: {
-    flexDirection: 'row', // Arrange types horizontally
-    flexWrap: 'wrap', // Allow wrapping of types if there are multiple
-    justifyContent: 'center', // Center types horizontally
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    justifyContent: 'center', 
     marginTop: 5,
-    alignItems:'center',
+    alignItems: 'center',
   },
+
+  // Style for each type text label
   typeText: {
-    backgroundColor: 'black', // Example background color for type
+    backgroundColor: 'black', 
     color: 'white',
     paddingVertical: 2,
     paddingHorizontal: 6,
     margin: 2,
     borderRadius: 4,
     fontSize: 12,
-
   },
-  columnContainer:{
-    flexDirection: 'column', // Stack name and types vertically
-    alignItems: 'flex-end', // Center name and types horizontally
+
+  // Column container for elements aligned to the right
+  columnContainer: {
+    flexDirection: 'column', 
+    alignItems: 'flex-end', 
   }
 });
 
