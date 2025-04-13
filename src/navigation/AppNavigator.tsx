@@ -1,10 +1,12 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+// Screens
 import HomeScreen from '../screens/HomeScreen/HomeScreen';
 import DetailsScreen from '../screens/DetailsScreen/DetailsScreen';
-import { Pokemon } from '../types';
 
+// Route params for stack navigation
 export type RootStackParamList = {
   Home: undefined;
   Details: {
@@ -15,8 +17,10 @@ export type RootStackParamList = {
   };
 };
 
+// Create a typed native stack navigator
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+// AppNavigator sets up and configures the navigation stack
 export default function AppNavigator() {
   return (
     <NavigationContainer>
@@ -26,7 +30,11 @@ export default function AppNavigator() {
           component={HomeScreen} 
           options={{ headerShown: false }} 
         />
-        <Stack.Screen name="Details" component={DetailsScreen} options={{ headerShown: false }}  />
+        <Stack.Screen 
+          name="Details" 
+          component={DetailsScreen} 
+          options={{ headerShown: false }} 
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

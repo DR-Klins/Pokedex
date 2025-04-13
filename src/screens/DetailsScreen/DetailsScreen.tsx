@@ -1,14 +1,23 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, Dimensions, Animated, TouchableOpacity } from 'react-native';
+import React, { useMemo, useCallback, useState } from 'react';
+import { View, Text, Image, Dimensions } from 'react-native';
 import { RootStackParamList } from '../../navigation/AppNavigator';
-import { RouteProp } from '@react-navigation/native';
-import { useNavigation } from '@react-navigation/native';
+import { RouteProp, useNavigation } from '@react-navigation/native';
 import { ImageBackground } from 'react-native';
+import { getStatColor } from '../../utils/colors';
+
 import styles from './styles';
 
-import backgroundImage from '../../assets/Cloud.jpeg'; // Background image for the screen
-import pokeballImage from '../../assets/Pokeball-Open.png'; // Pokéball image
+// Asset imports
+import backgroundImage from '../../assets/Cloud.jpeg';
+import pokeballImage from '../../assets/Pokeball-Open.png';
 
+// Reusable UI components
+import BackButton from '../../components/BackButton';
+import TypeList from '../../components/TypeList';
+import PokemonImage from '../../components/PokemonImage';
+import StatRow from '../../components/StatRow';
+
+// Type for route parameters
 type DetailsScreenRouteProp = RouteProp<RootStackParamList, 'Details'>;
 
 interface DetailsScreenProps {
@@ -19,87 +28,89 @@ const { width, height } = Dimensions.get('window');
 
 const DetailsScreen: React.FC<DetailsScreenProps> = ({ route }) => {
   const navigation = useNavigation();
-  const { name, types, stats, image } = route.params;
 
-  return (
-    <View style={styles.container}>
-      {/* Background with Pokémon image */}
-      <View style={styles.imageBackgroundContainer}>
-        <ImageBackground source={backgroundImage} style={styles.imageBackground}>
-          {/* Custom back button to navigate to previous screen */}
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()} // Navigate back to previous screen
-          >
-            <Text style={styles.backButtonText}>Back</Text>
-          </TouchableOpacity>
+  // Local state to handle unexpected rendering errors
+  const [hasError, setHasError] = useState(false);
 
-          {/* Display Pokémon types */}
-          <View style={styles.type}>
-            {types.map((type, index) => (
-              <Text key={index} style={styles.typeText}>{type}</Text>
+  // Memoized function to handle back navigation to improve performance
+  const handleGoBack = useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
+
+  let content;
+
+  try {
+    // Safely extract Pokémon data from navigation route params with fallbacks
+    const {
+      name = 'Unknown',
+      types = [],
+      stats = [],
+      image = ''
+    } = route.params || {};
+
+    // Use memoization to optimize stat color calculation
+    const memoizedStats = useMemo(() => {
+      return stats.map((stat) => ({
+        ...stat,
+        color: getStatColor(stat.name),
+      }));
+    }, [stats]);
+
+    // Main screen content (split into upper and lower sections)
+    content = (
+      <>
+        {/* Top section with background, back button, types, and Pokémon image */}
+        <View style={styles.imageBackgroundContainer}>
+          <ImageBackground source={backgroundImage} style={styles.imageBackground}>
+            <BackButton onPress={handleGoBack} />
+            <View style={styles.type}>
+              <TypeList types={types} />
+            </View>
+            <PokemonImage image={image} style={styles.pokemonImage} />
+          </ImageBackground>
+        </View>
+
+        {/* Bottom section with Pokémon name and stats */}
+        <View style={styles.dataContainer}>
+          {/* Name and decorative Pokéball */}
+          <View style={styles.typesContainer}>
+            <View style={styles.types}>
+              <Text style={styles.pokemonName}>{name}</Text>
+              <Image source={pokeballImage} style={styles.pokeballImage} />
+            </View>
+          </View>
+
+          {/* Stat bars */}
+          <View style={styles.statsContainer}>
+            <Text style={styles.title}>Stats</Text>
+            {memoizedStats.map((stat, index) => (
+              <StatRow
+                key={index}
+                name={stat.name}
+                value={stat.base_stat}
+                color={stat.color}
+              />
             ))}
           </View>
-
-          {/* Display Pokémon image */}
-          <Image source={{ uri: image }} style={styles.pokemonImage} />
-        </ImageBackground>
-      </View>
-
-      {/* Display Pokémon stats */}
-      <View style={styles.dataContainer}>
-        <View style={styles.typesContainer}>
-          <View style={styles.types}>
-            <Text style={styles.pokemonName}>{name}</Text>
-            {/* Display Pokéball image */}
-            <Image source={pokeballImage} style={styles.pokeballImage} />
-          </View>
         </View>
+      </>
+    );
+  } catch (error) {
+    // If rendering fails for any reason, log and show a fallback UI
+    console.error('Error rendering DetailsScreen:', error);
 
-        {/* Stats display section */}
-        <View style={styles.statsContainer}>
-          <Text style={styles.title}>Stats</Text>
-          {stats.map((stat, index) => (
-            <View key={index} style={styles.statContainer}>
-              {/* Stat row with name, progress bar, and value */}
-              <View style={styles.statRow}>
-                <Text style={styles.statName}>{stat.name}</Text>
-                <View style={styles.statBarContainer}>
-                  <View
-                    style={[
-                      styles.statBar,
-                      { width: `${stat.base_stat}%`, backgroundColor: getStatColor(stat.name) },
-                    ]}
-                  />
-                </View>
-                <Text style={styles.statValue}>{stat.base_stat}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
+    content = (
+      <View style={styles.container}>
+        <Text style={{ color: 'red', fontSize: 16, textAlign: 'center', marginTop: 40 }}>
+          Oops! Something went wrong while loading the Pokémon details.
+        </Text>
+        <BackButton onPress={handleGoBack} />
       </View>
-    </View>
-  );
-};
-
-// Returns color based on stat type
-const getStatColor = (statName: string) => {
-  switch (statName.toLowerCase()) {
-    case 'hp':
-      return '#3b4cca';
-    case 'attack':
-      return '#A7D8F2';
-    case 'defense':
-      return '#3b4cca';
-    case 'special-attack':
-      return '#A7D8F2';
-    case 'special-defense':
-      return '#3b4cca';
-    case 'speed':
-      return '#A7D8F2';
-    default:
-      return '#3b4cca';
+    );
   }
+
+  // Render final content (normal or error fallback)
+  return <View style={styles.container}>{content}</View>;
 };
 
 export default DetailsScreen;
