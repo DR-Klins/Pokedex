@@ -10,8 +10,12 @@ It is made to look and feel like the retro Pokédex used by **Ash Ketchum** in t
 ## Screenshots
 
 
+![MainScreen](https://github.com/user-attachments/assets/78389b74-3183-426b-b0fe-45fb8399dc95)
+
+![DetailsScreen](https://github.com/user-attachments/assets/0b4c6794-74d4-4b49-a9fb-d2afd421f61e)
 
 ---
+
 
 ##  Features
 
